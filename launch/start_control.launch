@@ -1,0 +1,5 @@
+<launch>
+    <node pkg="car_controller" type="central_manager.py" name="central_manager"/>
+    <node pkg="car_controller" type="serial_exchange.py" name="serial_exchange"/>
+    <node pkg="car_controller" type="tcp_exchange.py" name="tcp_exchange"/>
+</launch>
