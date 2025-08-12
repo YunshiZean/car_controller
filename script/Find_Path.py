@@ -51,26 +51,28 @@ T = Point('T',[])
 
 
 
-
+A.out_list = [I,B]
 B.out_list = [C]
+C.out_list = [D, R]
 D.out_list = [E]
+E.out_list = [F, O]
 F.out_list = [G]
+G.out_list = [H, L]
 H.out_list = [A]
+I.out_list = [J]
+J.out_list = [K, M, O]
+K.out_list = [H]
+L.out_list = [M,Q,S]
+M.out_list = [N]
+N.out_list = [F]
+O.out_list = [P]
+P.out_list = [Q,S,K]
+Q.out_list = [D]
+R.out_list = [S,K,M]
+S.out_list = [T]
+T.out_list = [B]
 
-A.out_list = [B, I]
-C.out_list = [D, O]
-E.out_list = [F, M]
-G.out_list = [H, K]
 
-I.out_list = [J, L, N]
-O.out_list = [J, L, P]
-M.out_list = [J, N, P]
-K.out_list = [L, N, P]
-
-J.out_list = [H]
-L.out_list = [F]
-N.out_list = [D]
-P.out_list = [B]
 # =================================
 
 from typing import Dict, Optional
