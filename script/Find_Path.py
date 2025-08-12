@@ -115,15 +115,62 @@ def find_path(start: Point, goal: Point):
         return None
     return [p.name.__str__() for p in _path]
 
+def to_point(name: str):
+    """
+    将 Point 的 name 转换为 Point 对象
+    """
+    if name == A.name:
+        return A
+    elif name == B.name:
+        return B
+    elif name == C.name:
+        return C
+    elif name == D.name:
+        return D
+    elif name == E.name:
+        return E
+    elif name == F.name:
+        return F
+    elif name == G.name:
+        return G
+    elif name == H.name:
+        return H
+    elif name == I.name:
+        return I
+    elif name == J.name:
+        return J
+    elif name == K.name:
+        return K
+    elif name == L.name:
+        return L
+    elif name == M.name:
+        return M
+    elif name == N.name:
+        return N
+    elif name == O.name:
+        return O
+    elif name == P.name:
+        return P
+    elif name == Q.name:
+        return Q
+    elif name == R.name:
+        return R
+    elif name == S.name:
+        return S
+    elif name == T.name:
+        return T
+
+
 
 
 # ==== 示例 ====
 if __name__ == "__main__":
-    path = bfs_shortest_path(A, H)
-    if path is None:
-        print("A -> H 不可达")
-    else:
-        print("最短路径：", " -> ".join(p.name for p in path), f"(步数 {len(path)-1})")
+    print(find_path(to_point("A"), to_point("A")))
+    # path = bfs_shortest_path(A, H)
+    # if path is None:
+    #     print("A -> H 不可达")
+    # else:
+    #     print("最短路径：", " -> ".join(p.name for p in path), f"(步数 {len(path)-1})")
 
 # 你也可以随便换起点终点，比如：
 # print(bfs_shortest_path(H, M))

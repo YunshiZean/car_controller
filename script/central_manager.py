@@ -5,7 +5,7 @@
 文件名: central_manager.py
 简介： 中央管理器
 作者： 未定义实验室.Zean 罗灵轩
-版本： 0.4.1
+版本： 0.4.4
 说明： 中央管理器
 更新内容： 为task添加了自动寻路
 创建时间： 2025.8.5
@@ -256,16 +256,18 @@ class PatrolController:
                 if self.fsm.state != RobotState.CARRYING:
                     self.fsm.switch_state(RobotState.CARRYING)
                     self.current_goal = self.task_queue[0]
-                self.fined_path = find_path(self.carinfo.current_point, self.task_queue[0]) #生成路径
-                self.fined_path.pop(0) #弹出自身
+                self.fined_path = find_path(to_point(self.carinfo.current_point), to_point(self.task_queue[0])) #生成路径
+                rospy.loginfo("[central_manager] find path: " + str(self.fined_path))
+                if len(self.fined_path) >1 :
+                    self.fined_path.pop(0) #弹出自身
                 self.current_goal = self.fined_path.pop(0)
                 self.publish_goal()
                 return f"/ack 已添加任务: {key}\n"
             else:
                 self.handle_continue()
                 return f"/error 无效点名: {key}\n"
-        except:
-            return "/error 格式错误，应为 /carry 点名\n"
+        except Exception as e:
+            return "/error 格式错误，应为 /carry 点名\nexception: {e}\n"
 
     def handle_continue(self, cmd=None):
         self.publish_goal()
@@ -368,7 +370,7 @@ class PatrolController:
 
 
             #新增路径规划的补丁
-            if self.fined_path is not None:
+            if self.fined_path:
                 self.current_goal = self.fined_path.pop(0)
                 self.publish_goal()
                 return
@@ -382,7 +384,8 @@ class PatrolController:
                     self.task_queue.pop(0)
                 if self.task_queue:
                     self.fined_path = find_path(self.carinfo.current_point, self.task_queue[0]) #生成路径
-                    self.fined_path.pop(0) #弹出自身
+                    if len(self.fined_path) > 1:
+                        self.fined_path.pop(0) #弹出自身
                     self.current_goal = self.fined_path.pop(0)
                 else:
                     if self.fsm.laststate == RobotState.CRUISE:
