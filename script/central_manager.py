@@ -24,6 +24,7 @@ from typing import Callable
 from WayManager import WaypointManager
 from std_msgs.msg import String
 import json
+from Find_Path import *
 
 """
 状态枚举
@@ -152,6 +153,7 @@ class PatrolController:
         self.carinfo = Car_info()
         self.way = WaypointManager(os.path.join(os.path.dirname(__file__), "..", "config"))
         self.current_path = self.way.get_path("path_1")
+        self.fined_path = [] #存储用来前往某点路径信息的列表
         self.carinfo.current_path = self.current_path 
         self.cruise_index = 0
         self.current_goal = None
@@ -254,6 +256,9 @@ class PatrolController:
                 if self.fsm.state != RobotState.CARRYING:
                     self.fsm.switch_state(RobotState.CARRYING)
                     self.current_goal = self.task_queue[0]
+                self.fined_path = find_path(self.carinfo.current_point, self.task_queue[0]) #生成路径
+                self.fined_path.pop(0) #弹出自身
+                self.current_goal = self.fined_path.pop(0)
                 self.publish_goal()
                 return f"/ack 已添加任务: {key}\n"
             else:
@@ -359,14 +364,26 @@ class PatrolController:
 
             self.car_get_info()
             self._info =  self.carinfo.to_json()
-            self.exchange.trans(f"/info {self._info}\n".encode("utf-8")) #数据上报
-            self.current_goal = None
+            self.exchange.trans(f"/info {self._info}\n".encode("utf-8")) #数据上报 
+
+
+            #新增路径规划的补丁
+            if self.fined_path is not None:
+                self.current_goal = self.fined_path.pop(0)
+                self.publish_goal()
+                return
+
+
+            
+            self.current_goal = None 
 
             if self.fsm.state == RobotState.CARRYING:
                 if self.task_queue:
                     self.task_queue.pop(0)
                 if self.task_queue:
-                    self.current_goal = self.task_queue[0]
+                    self.fined_path = find_path(self.carinfo.current_point, self.task_queue[0]) #生成路径
+                    self.fined_path.pop(0) #弹出自身
+                    self.current_goal = self.fined_path.pop(0)
                 else:
                     if self.fsm.laststate == RobotState.CRUISE:
                         self.handle_cruise()
