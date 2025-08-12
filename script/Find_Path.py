@@ -1,0 +1,127 @@
+# coding=utf-8
+
+"""
+文件名: WayManager.py
+简介：寻路管理模块
+作者： 未定义实验室.Zean 罗灵轩
+版本： 1.0
+说明： 实现自动寻路
+创建时间： 2025.8.9
+最后更新时间： 2025.8.12
+"""
+
+from collections import deque
+from typing import List, Optional
+
+
+
+class Point:
+    def __init__(self, name: str, out_list: List["Point"]):
+        self.name = name
+        self.out_list = out_list
+
+    def __repr__(self):
+        return f"Point({self.name})"
+
+
+# ====== 你的图（保持不变）======
+A = Point('A',[])
+B = Point('B',[])
+C = Point('C',[])
+D = Point('D',[])
+E = Point('E',[])
+F = Point('F',[])
+G = Point('G',[])
+H = Point('H',[])
+I = Point('I',[])
+J = Point('J',[])
+K = Point('K',[])
+L = Point('L',[])
+M = Point('M',[])
+N = Point('N',[])
+O = Point('O',[])
+P = Point('P',[])
+Q = Point('Q',[])
+R = Point('R',[])
+S = Point('S',[])
+T = Point('T',[])
+
+
+
+
+
+
+
+B.out_list = [C]
+D.out_list = [E]
+F.out_list = [G]
+H.out_list = [A]
+
+A.out_list = [B, I]
+C.out_list = [D, O]
+E.out_list = [F, M]
+G.out_list = [H, K]
+
+I.out_list = [J, L, N]
+O.out_list = [J, L, P]
+M.out_list = [J, N, P]
+K.out_list = [L, N, P]
+
+J.out_list = [H]
+L.out_list = [F]
+N.out_list = [D]
+P.out_list = [B]
+# =================================
+
+from typing import Dict, Optional
+def bfs_shortest_path(start: Point, goal: Point) -> Optional[List[Point]]:
+    parent: Dict[Point, Optional[Point]] = {start: None}
+    """返回从 start 到 goal 的最短路径（按边数），不可达则返回 None。"""
+    if start is goal:
+        return [start]
+
+    q = deque([start])
+    visited = {start}
+    # 用于回溯路径：child -> parent
+    parent = {start: None}
+
+    while q:
+        u = q.popleft()
+        for v in u.out_list:
+            if v not in visited:
+                visited.add(v)
+                parent[v] = u
+                if v is goal:
+                    # 回溯构造路径
+                    path = [v]
+                    while parent[path[-1]] is not None:
+                        path.append(parent[path[-1]])
+                    path.reverse()
+                    return path
+                q.append(v)
+
+    return None
+
+
+def find_path(start: Point, goal: Point):
+    """
+    寻找从 start 到 goal 的最短路径
+    返回最短路径的Point列表，如果不存在则返回 None
+    """
+    _path = bfs_shortest_path(start, goal)
+    if _path is None:
+        return None
+    return [p.name.__str__() for p in _path]
+
+
+
+# ==== 示例 ====
+if __name__ == "__main__":
+    path = bfs_shortest_path(A, H)
+    if path is None:
+        print("A -> H 不可达")
+    else:
+        print("最短路径：", " -> ".join(p.name for p in path), f"(步数 {len(path)-1})")
+
+# 你也可以随便换起点终点，比如：
+# print(bfs_shortest_path(H, M))
