@@ -2,7 +2,7 @@
 文件名: WayManager.py
 简介： 路径管理
 作者： 未定义实验室.Zean 罗灵轩
-版本： 2.0
+版本： 3.0
 说明： 为了适配osm地图而作出修改
 更新内容： 
 创建时间： 2025.8.5
@@ -28,9 +28,9 @@ class WaypointManager:
         p = self.points[name]
         point = PointStamped()
         point.header.frame_id = "map"
-        point.point.position.x = p["x"]
-        point.point.position.y = p["y"]
-        point.point.position.z = 0
+        point.point.x = p["x"]
+        point.point.y = p["y"]
+        point.point.z = 0
         return point
 
     def get_path(self, path_name:str) ->list:#获取路径的点
