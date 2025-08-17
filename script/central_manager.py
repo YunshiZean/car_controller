@@ -155,8 +155,6 @@ class PatrolController:
             self.current_path = self.way.get_path("path_1")
         except Exception:
             rospy.logerr("巡航路径初始化失败，跳过")
-
-        self.fined_path = [] #存储用来前往某点路径信息的列表
         
         self.carinfo.current_path = self.current_path 
         self.cruise_index = 0
@@ -177,7 +175,6 @@ class PatrolController:
 
         self.grong_vjug = False #夺舍标记
 
-        #self.ok = False
 
         # 命令调度器CD
         self.dispatcher = CommandDispatcher()
@@ -263,14 +260,7 @@ class PatrolController:
                 self.task_queue.append(key)
                 if self.fsm.state != RobotState.CARRYING:
                     self.fsm.switch_state(RobotState.CARRYING)
-                    #self.current_goal = self.task_queue[0]
-                    rospy.loginfo(self.carinfo.current_point)
-                    rospy.loginfo(key)
-                    self.fined_path = find_path(to_point(self.carinfo.current_point), to_point(self.task_queue[0])) #生成路径
-                    rospy.loginfo("[central_manager] find path: " + str(self.fined_path))
-                    if len(self.fined_path) >1 :
-                        self.fined_path.pop(0) #弹出自身
-                    self.current_goal = self.fined_path.pop(0)
+                    self.current_goal = self.task_queue[0]
                 self.publish_goal()
                 return f"/ack 已添加任务: {key}\n"
             else:
@@ -377,15 +367,6 @@ class PatrolController:
             self.car_get_info()
             self._info =  self.carinfo.to_json()
             self.exchange.trans(f"/info {self._info}\n".encode("utf-8")) #数据上报 
-
-
-            #新增路径规划的补丁
-            if self.fined_path:
-                self.current_goal = self.fined_path.pop(0)
-                self.publish_goal()
-                return
-
-
             
             self.current_goal = None 
 
@@ -393,10 +374,7 @@ class PatrolController:
                 if self.task_queue:
                     self.task_queue.pop(0)
                 if self.task_queue:
-                    self.fined_path = find_path(to_point(self.carinfo.current_point), to_point(self.task_queue[0])) #生成路径
-                    if len(self.fined_path) > 1:
-                        self.fined_path.pop(0) #弹出自身
-                    self.current_goal = self.fined_path.pop(0)
+                    self.current_goal = self.task_queue.pop(0)
                 else:
                     if self.fsm.laststate == RobotState.CRUISE:
                         self.handle_cruise()
@@ -422,7 +400,6 @@ class PatrolController:
                 else:
                     self.fsm.state = RobotState.IDLE
                     return
-
             self.publish_goal()
         elif msg.status.status == 4: #失败结束
             self.publish_goal()
