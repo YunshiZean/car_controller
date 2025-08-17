@@ -149,6 +149,8 @@ class PatrolController:
         主要的运行类
     """
     def __init__(self, exchange: Exchange):
+        self.frame = "map"
+
         self.carinfo = Car_info()
         self.way = WaypointManager(os.path.join(os.path.dirname(__file__), "..", "config"))
         try:
@@ -346,8 +348,10 @@ class PatrolController:
         if self.current_goal and self.current_goal in self.way.get_all_points():
             goal = self.way.get_pose(self.current_goal)
             goal.header.stamp = rospy.Time.now()
+            goal.header.frame_id = self.frame
             self.goal_pub.publish(goal)
             rospy.loginfo("导航至: %s", self.current_goal)
+            rospy.spin()
         else:
             rospy.logerr(f"点位：{self.current_goal} 不存在。\n[解决]状态重置为IDLE空闲\n[解决]目标初始化")
             self.fsm.switch_state(RobotState.IDLE)
