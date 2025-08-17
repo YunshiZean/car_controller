@@ -2,15 +2,15 @@
 文件名: WayManager.py
 简介： 路径管理
 作者： 未定义实验室.Zean 罗灵轩
-版本： 1.0
-说明： 实现对地图中路径和点位的管理
+版本： 2.0
+说明： 为了适配osm地图而作出修改
 更新内容： 
 创建时间： 2025.8.5
-最后更新时间： 2025.8.6
+最后更新时间： 2025.8.17
 """
 import json
 import os
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import PointStamped
 from tf.transformations import quaternion_from_euler
 
 class WaypointManager:
@@ -22,20 +22,16 @@ class WaypointManager:
             self.paths = json.load(f) #载入
 
     #获取点的值
-    def get_pose(self, name:str) ->PoseStamped:
+    def get_pose(self, name:str) ->PointStamped:
         if name not in self.points:
             raise ValueError(f"点位 {name} 不存在")
         p = self.points[name]
-        pose = PoseStamped()
-        pose.header.frame_id = "map"
-        pose.pose.position.x = p["x"]
-        pose.pose.position.y = p["y"]
-        pose.pose.position.z = 0
-        pose.pose.orientation.x = 0
-        pose.pose.orientation.y = 0
-        pose.pose.orientation.z = p["Z"]
-        pose.pose.orientation.w = p["w"]
-        return pose
+        point = PointStamped()
+        point.header.frame_id = "map"
+        point.point.position.x = p["x"]
+        point.point.position.y = p["y"]
+        point.point.position.z = 0
+        return point
 
     def get_path(self, path_name:str) ->list:#获取路径的点
         return self.paths.get(path_name, [])

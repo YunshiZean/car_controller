@@ -5,18 +5,18 @@
 文件名: central_manager.py
 简介： 中央管理器
 作者： 未定义实验室.Zean 罗灵轩
-版本： 0.4.6
+版本： 2.0.0
 说明： 中央管理器
-更新内容： 为task添加了自动寻路
+更新内容： 为osm地图做适配
 创建时间： 2025.8.5
-最后更新时间： 2025.8.12
+最后更新时间： 2025.8.17
 """
 
 from enum import Enum, auto
 import time
 import rospy
 import threading
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import PointStamped
 from move_base_msgs.msg import MoveBaseActionResult
 from actionlib_msgs.msg import GoalID
 import os
@@ -24,7 +24,6 @@ from typing import Callable
 from WayManager import WaypointManager
 from std_msgs.msg import String
 import json
-from Find_Path import *
 
 """
 状态枚举
@@ -152,8 +151,13 @@ class PatrolController:
     def __init__(self, exchange: Exchange):
         self.carinfo = Car_info()
         self.way = WaypointManager(os.path.join(os.path.dirname(__file__), "..", "config"))
-        self.current_path = self.way.get_path("path_1")
+        try:
+            self.current_path = self.way.get_path("path_1")
+        except Exception:
+            rospy.logerr("巡航路径初始化失败，跳过")
+
         self.fined_path = [] #存储用来前往某点路径信息的列表
+        
         self.carinfo.current_path = self.current_path 
         self.cruise_index = 0
         self.current_goal = None
@@ -161,9 +165,13 @@ class PatrolController:
 
         rospy.init_node('central_manager')
         self.exchange = exchange
-        self.goal_pub = rospy.Publisher('/move_base_simple/goal', PoseStamped, queue_size=10)
+        self.goal_pub = rospy.Publisher("/clicked_point", PointStamped, queue_size=10) #这里作出更改
         self.cancel_pub = rospy.Publisher('/move_base/cancel', GoalID, queue_size=10)
-        rospy.Subscriber('/move_base/result', MoveBaseActionResult, self.result_callback)
+        """
+        这里这个取消目标的功能暂时先不使用，改了架构后要另外处理
+        """
+        #rospy.Subscriber('/move_base/result', MoveBaseActionResult, self.result_callback)
+        
         rospy.Subscriber('/power_level', String, self.power_level_callback)
         self.fsm = StateMachine()#创建状态机对象
 
@@ -173,18 +181,18 @@ class PatrolController:
 
         # 命令调度器CD
         self.dispatcher = CommandDispatcher()
-        self.dispatcher.register("/cruise", self.handle_cruise)
-        self.dispatcher.register("/!cruise", self.handle_cruise_exit)
-        self.dispatcher.register("/report", self.handle_report)
-        self.dispatcher.register("/init", self.handle_init)
-        self.dispatcher.register("/pause", self.handle_pause)
-        self.dispatcher.register("/stop", self.handle_stop)
+        # self.dispatcher.register("/cruise", self.handle_cruise)
+        # self.dispatcher.register("/!cruise", self.handle_cruise_exit)
+        # self.dispatcher.register("/report", self.handle_report)
+        # self.dispatcher.register("/init", self.handle_init)
+        # self.dispatcher.register("/pause", self.handle_pause)
+        # self.dispatcher.register("/stop", self.handle_stop)
         self.dispatcher.register("/task", self.handle_task)
         self.dispatcher.register("/carry", self.handle_carry)
-        self.dispatcher.register("/continue", self.handle_continue)
-        self.dispatcher.register("/switch", self.handle_switch)
-        self.dispatcher.register("/info",self.handle_info)
-        self.dispatcher.register("/go_power",self.handle_go_power)
+        # self.dispatcher.register("/continue", self.handle_continue)
+        # self.dispatcher.register("/switch", self.handle_switch)
+        # self.dispatcher.register("/info",self.handle_info)
+        # self.dispatcher.register("/go_power",self.handle_go_power)
 
         threading.Thread(target=self.listen_loop, daemon=True).start()
 
