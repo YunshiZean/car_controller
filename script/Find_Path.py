@@ -4,7 +4,7 @@
 文件名: WayManager.py
 简介：寻路管理模块
 作者： 未定义实验室.Zean 罗灵轩
-版本： 1.2
+版本： 1.3
 说明： 修改了点位对象的信息
 创建时间： 2025.8.9
 最后更新时间： 2025.8.12
@@ -46,15 +46,18 @@ R = Point('R',[])
 S = Point('S',[])
 T = Point('T',[])
 
-
+One = Point('1',[])
+Two = Point('2',[])
 
 
 
 
 A.out_list = [I,B]
-B.out_list = [C]
+B.out_list = [One]
+One.out_list = [C]
 C.out_list = [D, R]
-D.out_list = [E]
+D.out_list = [Two]
+Two.out_list = [E]
 E.out_list = [F, O]
 F.out_list = [G]
 G.out_list = [H, L]
@@ -159,6 +162,10 @@ def to_point(name: str):
         return S
     elif name == T.name:
         return T
+    elif name == One.name:
+        return One
+    elif name == Two.name:
+        return Two
 
 
 
