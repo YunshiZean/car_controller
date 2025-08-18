@@ -5,11 +5,11 @@
 文件名: central_manager.py
 简介： 中央管理器
 作者： 未定义实验室.Zean 罗灵轩
-版本： 2.0.2
+版本： 2.0.10
 说明： 中央管理器
 更新内容： 修复已知问题
 创建时间： 2025.8.5
-最后更新时间： 2025.8.17
+最后更新时间： 2025.8.18
 """
 
 from enum import Enum, auto
@@ -165,12 +165,19 @@ class PatrolController:
 
         rospy.init_node('central_manager')
         self.exchange = exchange
-        self.goal_pub = rospy.Publisher("/clicked_point", PointStamped, queue_size=10) #这里作出更改
+        #self.goal_pub = rospy.Publisher("/clicked_point", PointStamped, queue_size=10) #这里作出更改
         self.cancel_pub = rospy.Publisher('/move_base/cancel', GoalID, queue_size=10)
+        self.nav_pub = rospy.Publisher('/nav_cmd', String, queue_size=10)
+        self.goal_pub = rospy.Publisher('/nav_goal', PointStamped, queue_size=10)
+
+
+
+
+
         """
         这里这个取消目标的功能暂时先不使用，改了架构后要另外处理
         """
-        #rospy.Subscriber('/move_base/result', MoveBaseActionResult, self.result_callback)
+        rospy.Subscriber('/result', String, self.result_callback)
         
         rospy.Subscriber('/power_level', String, self.power_level_callback)
         self.fsm = StateMachine()#创建状态机对象
@@ -184,11 +191,11 @@ class PatrolController:
         # self.dispatcher.register("/!cruise", self.handle_cruise_exit)
         # self.dispatcher.register("/report", self.handle_report)
         # self.dispatcher.register("/init", self.handle_init)
-        # self.dispatcher.register("/pause", self.handle_pause)
+        self.dispatcher.register("/pause", self.handle_pause)
         # self.dispatcher.register("/stop", self.handle_stop)
         self.dispatcher.register("/task", self.handle_task)
         self.dispatcher.register("/carry", self.handle_carry)
-        # self.dispatcher.register("/continue", self.handle_continue)
+        self.dispatcher.register("/continue", self.handle_continue)
         # self.dispatcher.register("/switch", self.handle_switch)
         # self.dispatcher.register("/info",self.handle_info)
         # self.dispatcher.register("/go_power",self.handle_go_power)
@@ -204,14 +211,18 @@ class PatrolController:
                     rospy.loginfo("收到指令: %s", line)
                     response = self.dispatcher.dispatch(line)
                     if response:
-                        rospy.loginfo(response)
+                        rospy.logwarn(response)
                 else:
                     rospy.logwarn("执行任务中，不接受其他命令")
 
     def handle_cruise(self, cmd=None):
-        self.fsm.switch_state(RobotState.CRUISE)
-        self.current_goal = self.current_path[self.cruise_index]
-        self.publish_goal()
+        # self.fsm.switch_state(RobotState.CRUISE)
+        # self.current_goal = self.current_path[self.cruise_index]
+        # self.publish_goal()
+        # self.current_goal = "0"
+        # self.publish_goal()
+        # self.current_goal = "1"
+        # self.current_goal = "0"
         return "/ack 开始巡航"
 
     def handle_cruise_exit(self, cmd=None):
@@ -233,7 +244,9 @@ class PatrolController:
         return "/ack 初始化完成"
 
     def handle_pause(self, cmd=None):
-        self.cancel_pub.publish(GoalID())
+        msg = String()
+        msg.data = "/pause"
+        self.nav_pub.publish(msg)
         return "/ack 已暂停\n"
 
     def handle_stop(self, cmd=None):
@@ -271,8 +284,37 @@ class PatrolController:
         except Exception as e:
             return f"/error 格式错误，应为 /carry 点名\nexception: {e}\n"
 
+    # def handle_carry(self, cmd=None):
+    #     try:
+    #         _, key = cmd.split()
+    #         if key in self.way.get_all_points(): #可以前往任何位置，所以要参照所有点
+    #             # self.task_queue.append(key)
+    #             # if self.fsm.state != RobotState.CARRYING:
+    #             #     self.fsm.switch_state(RobotState.CARRYING)
+    #             #     self.current_goal = self.task_queue[0]
+    #             self.current_goal = key
+    #             self.publish_goal()
+    #             return f"/ack 已添加任务: {key}\n"
+    #         else:
+    #             self.handle_continue()
+    #             return f"/error 无效点名: {key}\n"
+    #     except Exception as e:
+    #         return f"/error 格式错误，应为 /carry 点名\nexception: {e}\n"
+
+
+
+
+
+
+
+
+
+
+
     def handle_continue(self, cmd=None):
-        self.publish_goal()
+        msg = String()
+        msg.data = "/continue"
+        self.nav_pub.publish(msg)
         return "/ack 已继续\n"
 
     def handle_switch(self, cmd=None):
@@ -345,20 +387,21 @@ class PatrolController:
         self.task_queue = self.carinfo.task_queue
 
     def publish_goal(self):
+        self.handle_continue()
         if self.current_goal and self.current_goal in self.way.get_all_points():
             goal = self.way.get_pose(self.current_goal)
             goal.header.stamp = rospy.Time.now()
             goal.header.frame_id = self.frame
             self.goal_pub.publish(goal)
             rospy.loginfo("导航至: %s", self.current_goal)
-            rospy.spin()
         else:
             rospy.logerr(f"点位：{self.current_goal} 不存在。\n[解决]状态重置为IDLE空闲\n[解决]目标初始化")
             self.fsm.switch_state(RobotState.IDLE)
             self.current_goal = None
 
-    def result_callback(self, msg):
-        if msg.status.status == 3:  # SUCCEEDED
+    def result_callback(self, msg:String):
+        if msg.data == "/arrive":  # SUCCEEDED
+            rospy.loginfo("已到达: %s", self.current_goal)
             self.exchange.trans(f"/arrive {self.current_goal}\n".encode("utf-8"))
 
             #如果被夺舍，那么就不需要上传当前信息了，而是载入信息后开始行动
@@ -404,8 +447,6 @@ class PatrolController:
                 else:
                     self.fsm.state = RobotState.IDLE
                     return
-            self.publish_goal()
-        elif msg.status.status == 4: #失败结束
             self.publish_goal()
     def power_level_callback(self,msg:String):
         if msg.data == "full":
