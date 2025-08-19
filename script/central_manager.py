@@ -5,11 +5,11 @@
 文件名: central_manager.py
 简介： 中央管理器
 作者： 未定义实验室.Zean 罗灵轩
-版本： 2.1.0
+版本： 2.1.1
 说明： 中央管理器
 更新内容： 修复已知问题
 创建时间： 2025.8.5
-最后更新时间： 2025.8.18
+最后更新时间： 2025.8.19
 """
 
 from enum import Enum, auto
@@ -176,6 +176,7 @@ class PatrolController:
         self.frame = "map"
         self.current_goal = None
         self.cruise_index = 0
+        self.current_path = []
         self.carinfo.current_path = self.current_path 
         self.task_queue = []
         self.grong_vjug = False #夺舍标记
