@@ -5,11 +5,11 @@
 文件名: tcp_exchange.py
 简介：网络数据交换节点
 作者： 未定义实验室.Zean 罗灵轩
-版本： 1.0.0
+版本： 1.0.1
 说明： 
-更新内容： 检查发布
+更新内容： 改成固定ip
 创建时间： 2025.8.5
-最后更新时间： 2025.8.17
+最后更新时间： 2025.8.19
 """
 
 
@@ -24,13 +24,13 @@ class CarClientROS:
     def __init__(self, car_id="base_car_name", broadcast_port=9999):
         self.car_id = car_id
         self.broadcast_port = broadcast_port
-        self.server_ip = None
-        self.server_port = None
-        self.listen_port = None
-        self.send_port = None
-        self.alive_port = None
+        self.server_ip = "192.168.203.8"
+        self.server_port = 13145
+        self.listen_port = 13146
+        self.send_port = 13145
+        self.alive_port = 13147
         self.running = False
-        self.broadcast_pattern = re.compile(r"SERVER:(\d+\.\d+\.\d+\.\d+):(\d+)")
+        # self.broadcast_pattern = re.compile(r"SERVER:(\d+\.\d+\.\d+\.\d+):(\d+)")
 
         self.linkbreak = False #专门给发送信道给个标志位
         
@@ -39,7 +39,7 @@ class CarClientROS:
 
     def start(self):
         self.running = True
-        threading.Thread(target=self.broadcast_listener, daemon=True).start()
+        # threading.Thread(target=self.broadcast_listener, daemon=True).start()
         threading.Thread(target=self.alive_loop, daemon=True).start()
         threading.Thread(target=self.send_loop, daemon=True).start()
         threading.Thread(target=self.receive_loop, daemon=True).start()
@@ -49,30 +49,30 @@ class CarClientROS:
         self.running = False
         rospy.logwarn("[CarClient] 停止运行")
 
-    def broadcast_listener(self):
-        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        s.bind(('', self.broadcast_port))
+    # def broadcast_listener(self):
+    #     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    #     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    #     s.bind(('', self.broadcast_port))
 
-        while self.running:
-            try:
-                data, _ = s.recvfrom(1024)
-                msg = data.decode('utf-8').strip()
-                match = self.broadcast_pattern.match(msg)
-                if match:
-                    ip, port = match.groups()
-                    port = int(port)
-                    if ip != self.server_ip or port != self.server_port:
-                        self.server_ip = ip
-                        self.server_port = port
-                        self.listen_port = port + 1
-                        self.alive_port = port + 2
-                        self.send_port = port
-                        rospy.loginfo(f"[发现服务器] {ip}:{port}")
-            except Exception as e:
-                rospy.logwarn(f"[广播监听错误] {e}")
-                time.sleep(1)
-        s.close()
+    #     while self.running:
+    #         try:
+    #             data, _ = s.recvfrom(1024)
+    #             msg = data.decode('utf-8').strip()
+    #             match = self.broadcast_pattern.match(msg)
+    #             if match:
+    #                 ip, port = match.groups()
+    #                 port = int(port)
+    #                 if ip != self.server_ip or port != self.server_port:
+    #                     self.server_ip = ip
+    #                     self.server_port = port
+    #                     self.listen_port = port + 1
+    #                     self.alive_port = port + 2
+    #                     self.send_port = port
+    #                     rospy.loginfo(f"[发现服务器] {ip}:{port}")
+    #         except Exception as e:
+    #             rospy.logwarn(f"[广播监听错误] {e}")
+    #             time.sleep(1)
+    #     s.close()
 
     def alive_loop(self):
         while self.running:
@@ -156,7 +156,7 @@ class CarClientROS:
 
 if __name__ == '__main__':
     rospy.init_node("tcp_exchange")
-    client = CarClientROS(car_id="Car_A1")
+    client = CarClientROS(car_id="Car1")
     client.start()
     rospy.spin()
     client.stop()

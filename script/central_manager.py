@@ -5,9 +5,9 @@
 文件名: central_manager.py
 简介： 中央管理器
 作者： 未定义实验室.Zean 罗灵轩
-版本： 2.1.1
+版本： 2.1.3
 说明： 中央管理器
-更新内容： 修复已知问题
+更新内容： 新增shut up功能
 创建时间： 2025.8.5
 最后更新时间： 2025.8.19
 """
@@ -172,14 +172,6 @@ class PatrolController:
         主要的运行类
     """
     def __init__(self, exchange: Exchange):
-    # 初始化变量
-        self.frame = "map"
-        self.current_goal = None
-        self.cruise_index = 0
-        self.current_path = []
-        self.carinfo.current_path = self.current_path 
-        self.task_queue = []
-        self.grong_vjug = False #夺舍标记
     # 初始化对象
         self.carinfo = Car_info()
         self.fsm = StateMachine()
@@ -195,6 +187,13 @@ class PatrolController:
             print_error("Path始化失败，跳过")
         else:
             print_success("Path初始化成功")
+    # 初始化变量
+        self.frame = "map"
+        self.current_goal = None
+        self.cruise_index = 0
+        self.carinfo.current_path = self.current_path 
+        self.task_queue = []
+        self.grong_vjug = False #夺舍标记
     # ROS相关初始化
         rospy.init_node('central_manager')
         self.exchange = exchange
@@ -209,8 +208,10 @@ class PatrolController:
         self.dispatcher.register("/carry", self.handle_carry)
         self.dispatcher.register("/continue", self.handle_continue)
         self.dispatcher.register("/task", self.handle_task)
-        # self.dispatcher.register("/cruise", self.handle_cruise)
-        # self.dispatcher.register("/!cruise", self.handle_cruise_exit)
+        self.dispatcher.register("/cruise", self.handle_cruise)
+        self.dispatcher.register("/!cruise", self.handle_cruise_exit)
+        self.dispatcher.register("/shut_up", self.handle_shut_up)
+        self.dispatcher.register("/!shut_up", self.handle_i_shut_up)
         # self.dispatcher.register("/init", self.handle_init)
         # self.dispatcher.register("/stop", self.handle_stop)
         # self.dispatcher.register("/switch", self.handle_switch)
@@ -225,22 +226,29 @@ class PatrolController:
             line = self.exchange.recv()
             if line:
                 if self.fsm.state != RobotState.TASK:
-                    print_info("收到指令: %s", line)
+                    print_info(f"收到指令: {line}")
                     response = self.dispatcher.dispatch(line)
                     if response:
                         print_info(response)
                 else:
                     print_warn("执行任务中，不接受其他命令")
 
-    # def handle_cruise(self, cmd=None):
-    #     self.fsm.switch_state(RobotState.CRUISE)
-    #     self.current_goal = self.current_path[self.cruise_index]
-    #     self.publish_goal()
-    #     return "cruise start"
-    # def handle_cruise_exit(self, cmd=None):
-    #     #防止出bug，退出巡航后直接初始化
-    #     self.handle_init()
-    #     return "cruise exit"
+    def handle_shut_up(self, cmd=None):
+        self.exchange.trans("/shut_up".encode("utf-8"))
+
+    def handle_i_shut_up(self, cmd=None):
+        self.exchange.trans("/!shut_up".encode("utf-8"))
+
+    def handle_cruise(self, cmd=None):
+        self.fsm.switch_state(RobotState.CRUISE)
+        self.current_goal = self.current_path[self.cruise_index]
+        self.publish_goal()
+        return "cruise start"
+    
+    def handle_cruise_exit(self, cmd=None):
+        #防止出bug，退出巡航后直接初始化
+        self.handle_init()
+        return "cruise exit"
 
     def handle_init(self, cmd=None):
         self.handle_stop()

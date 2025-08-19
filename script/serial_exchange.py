@@ -5,11 +5,11 @@
 文件名: serial_exchange.py
 简介：串口数据交换节点
 作者： 未定义实验室.Zean 罗灵轩
-版本： 1.3
+版本： 1.4
 说明： 实现 /message_up → 串口 → /message_down 的实时桥接
 更新内容： 新增了指令筛选，不是他喜欢的指令，直接拒绝转发
 创建时间： 2025.8.6
-最后更新时间： 2025.8.6
+最后更新时间： 2025.8.19
 """
 
 import rospy
@@ -41,6 +41,9 @@ class SerialBridge:
                     message = msg.data
                     if message == "/shut_up":
                         self.serial_conn.write(message.encode("utf-8"))
+                    elif message == "/!shut_up":
+                        self.serial_conn.write(message.encode("utf-8"))
+
                     if " " in message:
                         A,_ = message.split(" ",1)
                         if A == "/arrive":
