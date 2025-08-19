@@ -39,6 +39,8 @@ class SerialBridge:
             try:
                 with self.serial_lock:
                     message = msg.data
+                    if message == "/shut_up":
+                        self.serial_conn.write(message.encode("utf-8"))
                     if " " in message:
                         A,_ = message.split(" ",1)
                         if A == "/arrive":
