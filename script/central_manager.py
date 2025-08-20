@@ -5,7 +5,7 @@
 文件名: central_manager.py
 简介： 中央管理器
 作者： 未定义实验室.Zean 罗灵轩
-版本： 2.1.3
+版本： 2.1.4
 说明： 中央管理器
 更新内容： 新增shut up功能
 创建时间： 2025.8.5
@@ -212,8 +212,8 @@ class PatrolController:
         self.dispatcher.register("/!cruise", self.handle_cruise_exit)
         self.dispatcher.register("/shut_up", self.handle_shut_up)
         self.dispatcher.register("/!shut_up", self.handle_i_shut_up)
-        # self.dispatcher.register("/init", self.handle_init)
-        # self.dispatcher.register("/stop", self.handle_stop)
+        self.dispatcher.register("/init", self.handle_init)
+        self.dispatcher.register("/stop", self.handle_stop)
         # self.dispatcher.register("/switch", self.handle_switch)
         # self.dispatcher.register("/info",self.handle_info)
         # self.dispatcher.register("/go_power",self.handle_go_power)
@@ -390,7 +390,8 @@ class PatrolController:
     def result_callback(self, msg:String):
         if msg.data == "/arrive":  # SUCCEEDED
             rospy.loginfo("已到达: %s", self.current_goal)
-            self.exchange.trans(f"/arrive {self.current_goal}\n".encode("utf-8"))
+            #去掉到点报站
+            # self.exchange.trans(f"/arrive {self.current_goal}\n".encode("utf-8"))
 
             #如果被夺舍，那么就不需要上传当前信息了，而是载入信息后开始行动
             if self.grong_vjug:
