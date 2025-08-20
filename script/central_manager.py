@@ -415,7 +415,7 @@ class PatrolController:
                         self.handle_cruise()
                         return
                     else:
-                        self.handle_init()
+                        # self.handle_init()
                         return
 
             elif self.fsm.state == RobotState.CRUISE:
