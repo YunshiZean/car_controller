@@ -5,11 +5,11 @@
 文件名: tcp_exchange.py
 简介：网络数据交换节点
 作者： 未定义实验室.Zean 罗灵轩
-版本： 1.0.1
+版本： 2.0.0
 说明： 
-更新内容： 移除锁
+更新内容： 配置文件
 创建时间： 2025.8.5
-最后更新时间： 2025.8.19
+最后更新时间： 2025.8.21
 """
 
 
@@ -21,14 +21,14 @@ import rospy
 from std_msgs.msg import String
 
 class CarClientROS:
-    def __init__(self, car_id="base_car_name", broadcast_port=9999):
-        self.car_id = car_id
+    def __init__(self, broadcast_port=9999):
+        self.car_id = rospy.get_param("~car_name", "base_car_name") 
         self.broadcast_port = broadcast_port
-        self.server_ip = "192.168.203.8"
-        self.server_port = 13145
-        self.listen_port = 13146
-        self.send_port = 13145
-        self.alive_port = 13147
+        self.server_ip = rospy.get_param("~server_ip", "192.168.203.8")
+        self.sen_port = rospy.get_param("~send_port", 13145)
+        self.server_port = self.send_port
+        self.listen_port = rospy.get_param("~listen_port", 13146)
+        self.alive_port = rospy.get_param("~alive_port", 13147)
         self.running = False
         # self.broadcast_pattern = re.compile(r"SERVER:(\d+\.\d+\.\d+\.\d+):(\d+)")
 
@@ -156,7 +156,7 @@ class CarClientROS:
 
 if __name__ == '__main__':
     rospy.init_node("tcp_exchange")
-    client = CarClientROS(car_id="Car1")
+    client = CarClientROS()
     client.start()
     rospy.spin()
     client.stop()
