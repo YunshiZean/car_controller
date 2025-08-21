@@ -30,7 +30,6 @@ class CarClientROS:
         self.listen_port = rospy.get_param("~listen_port", 13146)
         self.alive_port = rospy.get_param("~alive_port", 13147)
         self.running = False
-        # self.broadcast_pattern = re.compile(r"SERVER:(\d+\.\d+\.\d+\.\d+):(\d+)")
 
         self.linkbreak = False #专门给发送信道给个标志位
         
@@ -48,31 +47,6 @@ class CarClientROS:
     def stop(self):
         self.running = False
         rospy.logwarn("[CarClient] 停止运行")
-
-    # def broadcast_listener(self):
-    #     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    #     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    #     s.bind(('', self.broadcast_port))
-
-    #     while self.running:
-    #         try:
-    #             data, _ = s.recvfrom(1024)
-    #             msg = data.decode('utf-8').strip()
-    #             match = self.broadcast_pattern.match(msg)
-    #             if match:
-    #                 ip, port = match.groups()
-    #                 port = int(port)
-    #                 if ip != self.server_ip or port != self.server_port:
-    #                     self.server_ip = ip
-    #                     self.server_port = port
-    #                     self.listen_port = port + 1
-    #                     self.alive_port = port + 2
-    #                     self.send_port = port
-    #                     rospy.loginfo(f"[发现服务器] {ip}:{port}")
-    #         except Exception as e:
-    #             rospy.logwarn(f"[广播监听错误] {e}")
-    #             time.sleep(1)
-    #     s.close()
 
     def alive_loop(self):
         while self.running:

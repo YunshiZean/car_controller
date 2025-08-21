@@ -5,11 +5,11 @@
 文件名: serial_exchange.py
 简介：串口数据交换节点
 作者： 未定义实验室.Zean 罗灵轩
-版本： 1.4
+版本： 2.0.0
 说明： 实现 /message_up → 串口 → /message_down 的实时桥接
-更新内容： 新增了指令筛选，不是他喜欢的指令，直接拒绝转发
+更新内容： 整理代码，添加launch配置项
 创建时间： 2025.8.6
-最后更新时间： 2025.8.19
+最后更新时间： 2025.8.21
 """
 
 import rospy
@@ -22,8 +22,6 @@ class SerialBridge:
     def __init__(self):
         self.port = rospy.get_param("~port", "/dev/ttyUSB_Speech")  # "~"表示是私有命名空间
         self.baudrate = rospy.get_param("~baudrate", 115200) 
-        self.port = self.port
-        self.baudrate = self.baudrate
         self.serial_conn = None
         self.running = True
         self.serial_lock = threading.Lock()
