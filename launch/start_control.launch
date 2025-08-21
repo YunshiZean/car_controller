@@ -1,5 +1,19 @@
 <launch>
-    <node pkg="car_controller" type="central_manager.py" name="central_manager"/>
-    <node pkg="car_controller" type="serial_exchange.py" name="serial_exchange"/>
-    <node pkg="car_controller" type="tcp_exchange.py" name="tcp_exchange"/>
+    <node pkg="car_controller" type="central_manager.py" name="central_manager">
+    </node>
+
+    <!-- Serial 语音控制节点 -->
+    <node pkg="car_controller" type="serial_exchange.py" name="serial_exchange">
+        <param name="port" type="string" value="/dev/ttyUSB_Speech"/> <!-- 串口名称 -->
+        <param name="baudrate" type="int" value="115200"/> <!-- 波特率 -->
+    </node>
+
+    <!-- TCP ·服务器节点 -->
+    <node pkg="car_controller" type="tcp_exchange.py" name="tcp_exchange">
+        <param name="car_name" type="string" value="car1"/> <!-- 车辆名称 -->
+        <param name="server_ip" type="string" value="192.168.203.8"/> <!-- 服务器IP -->
+        <param name="send_port" type="int" value="13145"/> <!-- 发送端口 -->
+        <param name="listen_port" type="int" value="13146"/> <!-- 接收端口 -->
+        <param name="alive_port" type="int" value="13147"/> <!-- 心跳端口 -->
+    </node>
 </launch>
