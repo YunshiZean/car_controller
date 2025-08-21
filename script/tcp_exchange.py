@@ -25,7 +25,7 @@ class CarClientROS:
         self.car_id = rospy.get_param("~car_name", "base_car_name") 
         self.broadcast_port = broadcast_port
         self.server_ip = rospy.get_param("~server_ip", "192.168.203.8")
-        self.sen_port = rospy.get_param("~send_port", 13145)
+        self.send_port = rospy.get_param("~send_port", 13145)
         self.server_port = self.send_port
         self.listen_port = rospy.get_param("~listen_port", 13146)
         self.alive_port = rospy.get_param("~alive_port", 13147)
