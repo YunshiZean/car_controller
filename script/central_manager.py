@@ -3,13 +3,13 @@
 
 """
 文件名: central_manager.py
-简介： 中央管理器
+简介： 中央管理器 
 作者： 未定义实验室.Zean 罗灵轩
-版本： 2.1.52
+版本： 2.1.11
 说明： 中央管理器
-更新内容： 新增shut up功能
+更新内容： 将publish_goal映射到了/master_cmd
 创建时间： 2025.8.5
-最后更新时间： 2025.8.19
+最后更新时间： 2025.8.24
 """
 
 from enum import Enum, auto
@@ -17,6 +17,8 @@ import time
 import rospy
 import threading
 from geometry_msgs.msg import PointStamped
+from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import Pose
 from move_base_msgs.msg import MoveBaseActionResult
 from actionlib_msgs.msg import GoalID
 import os
@@ -25,6 +27,9 @@ from WayManager import WaypointManager
 from std_msgs.msg import String
 import json
 from colorama import init, Fore
+from turn_on_wheeltec_robot.msg import MasterCmd
+
+
 
 init(autoreset=True)
 def print_error(msg):
@@ -38,14 +43,6 @@ def print_warn(msg):
 
 def print_info(msg):
     print(os.path.basename(__file__) + Fore.WHITE + f": [info:{time.time()}] " + str(msg))
-
-
-
-
-
-
-
-
 
 
 """
@@ -69,6 +66,7 @@ class StateMachine:
         self.laststate = None
 
     def switch_state(self, state: RobotState):
+        rospy.loginfo(f"Switch state from {self.state} to {state}")
         self.laststate = self.state
         self.state = state
 
@@ -194,12 +192,16 @@ class PatrolController:
         self.carinfo.current_path = self.current_path 
         self.task_queue = []
         self.grong_vjug = False #夺舍标记
+        self.mqtt_car_id = rospy.get_param("~mqtt_car_id", 1)
+        self.mqtt_forma = 0
+        self.mqtt_setleader = 0
     # ROS相关初始化
         rospy.init_node('central_manager')
         self.exchange = exchange
         self.cancel_pub = rospy.Publisher('/move_base/cancel', GoalID, queue_size=10)
         self.nav_pub = rospy.Publisher('/nav_cmd', String, queue_size=10)
         self.goal_pub = rospy.Publisher('/nav_goal', PointStamped, queue_size=10)
+        self.master_cmd_pub = rospy.Publisher('/master_cmd', MasterCmd, queue_size=10)
         rospy.Subscriber('/result', String, self.result_callback)
         rospy.Subscriber('/power_level', String, self.power_level_callback)
     # 命令调度器CD
@@ -214,6 +216,7 @@ class PatrolController:
         self.dispatcher.register("/!shut_up", self.handle_i_shut_up)
         self.dispatcher.register("/init", self.handle_init)
         self.dispatcher.register("/stop", self.handle_stop)
+        self.dispatcher.register("/formation", self.handle_stop)
         # self.dispatcher.register("/switch", self.handle_switch)
         # self.dispatcher.register("/info",self.handle_info)
         # self.dispatcher.register("/go_power",self.handle_go_power)
@@ -376,12 +379,27 @@ class PatrolController:
 
     def publish_goal(self):
         self.handle_continue()
-        if self.current_goal and self.current_goal in self.way.get_all_points():
+        if self.current_goal is not None  and  self.current_goal in self.way.get_all_points():
             goal = self.way.get_pose(self.current_goal)
-            goal.header.stamp = rospy.Time.now()
-            goal.header.frame_id = self.frame
-            self.goal_pub.publish(goal)
-            rospy.loginfo("导航至: %s", self.current_goal)
+            # goal.header.stamp = rospy.Time.now()
+            # goal.header.frame_id = self.frame
+            # self.goal_pub.publish(goal)
+
+            message = MasterCmd()
+            message.header.stamp = rospy.Time.now()
+            message.header.frame_id = self.frame
+            message.cid = self.mqtt_car_id
+            message.forma = self.mqtt_forma
+            message.road = 1
+            message.start = 1
+            message.test_id = 1
+            message.set_leader = self.mqtt_setleader
+            message.start_rp = Pose()#不要起点
+            message.end_rp = Pose()
+            message.end_rp.position.x = goal.point.x
+            message.end_rp.position.y = goal.point.y
+            self.master_cmd_pub.publish(message)
+            rospy.logwarn("导航至: %s", self.current_goal)
         else:
             rospy.logerr(f"点位：{self.current_goal} 不存在。\n[解决]状态重置为IDLE空闲\n[解决]目标初始化")
             self.fsm.switch_state(RobotState.IDLE)
@@ -398,11 +416,12 @@ class PatrolController:
                 self.grong_vjug = False
                 self.publish_goal() #开始行动
                 return #直接退出
-
-            self.car_get_info()
-            self._info =  self.carinfo.to_json()
-            self.exchange.trans(f"/info {self._info}\n".encode("utf-8")) #数据上报 
-            
+            try:
+                self.car_get_info()
+                self._info =  self.carinfo.to_json()
+                self.exchange.trans(f"/info {self._info}\n".encode("utf-8")) #数据上报 
+            except Exception as e:
+                rospy.logerr(f"car info获取上传失败：{e}")
             self.current_goal = None 
 
             if self.fsm.state == RobotState.CARRYING:
@@ -415,26 +434,36 @@ class PatrolController:
                         self.handle_cruise()
                         return
                     else:
-                        # self.handle_init()
+                        rospy.loginfo("上一状态非运动，不操作")
+                        self.fsm.switch_state(RobotState.IDLE)
+                        self.current_goal = None
+                        #self.handle_init() #千万千万不能把这个解开！
                         return
-
             elif self.fsm.state == RobotState.CRUISE:
                 self.cruise_index = (self.cruise_index + 1) % len(self.current_path)
                 self.current_goal = self.current_path[self.cruise_index]
-
             elif self.fsm.state == RobotState.TASK:
                 if self.fsm.laststate == RobotState.CRUISE:
                     self.current_goal = self.current_path[self.cruise_index]
                     self.fsm.switch_state(self.fsm.laststate)
                 elif self.fsm.laststate == RobotState.CARRYING:
-                    self.current_goal = self.task_queue[0]
+                    if self.task_queue:
+                        rospy.logwarn("task 返回 carry出错，task_queue为空")
+                        self.current_goal = self.task_queue[0]
+                    else:
+                        self.current_goal = None
                     self.fsm.switch_state(self.fsm.laststate)
                 elif self.fsm.laststate == RobotState.POWER: #如果是充电状态，则不进行任何操作
                     self.fsm.switch_state(self.fsm.laststate) #进入充电状态
                     return
                 else:
+                    rospy.loginfo("上一状态非运动，不操作")
                     self.fsm.state = RobotState.IDLE
                     return
+            else:
+                rospy.loginfo("未发布目标而触发『到达』事件，状态自动返回")
+                self.fsm.switch_state(self.fsm.laststate)
+                return
             self.publish_goal()
     def power_level_callback(self,msg:String):
         if msg.data == "full":

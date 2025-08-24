@@ -5,7 +5,7 @@
 文件名: serial_exchange.py
 简介：串口数据交换节点
 作者： 未定义实验室.Zean 罗灵轩
-版本： 2.0.0
+版本： 2.0.1
 说明： 实现 /message_up → 串口 → /message_down 的实时桥接
 更新内容： 整理代码，添加launch配置项
 创建时间： 2025.8.6
@@ -37,10 +37,10 @@ class SerialBridge:
             try:
                 with self.serial_lock:
                     message = msg.data
-                    if message == "/shut_up":
-                        self.serial_conn.write(message.encode("utf-8"))
-                    elif message == "/!shut_up":
-                        self.serial_conn.write(message.encode("utf-8"))
+                    if message == "/shut_up ":
+                        self.serial_conn.write((message + '\n').encode('utf-8'))
+                    elif message == "/!shut_up ":
+                        self.serial_conn.write((message + '\n').encode('utf-8'))
 
                     if " " in message:
                         A,_ = message.split(" ",1)

@@ -1,5 +1,9 @@
 <launch>
+
+    <include file="$(find autonomous_driving)/launch/start_navigation.launch"/>
+
     <node pkg="car_controller" type="central_manager.py" name="central_manager">
+        <param name="mqtt_car_id" type="int" value="1"/> 
     </node>
 
     <!-- Serial 语音控制节点 -->
