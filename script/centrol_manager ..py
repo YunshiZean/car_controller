@@ -216,7 +216,7 @@ class PatrolController:
         self.dispatcher.register("/!shut_up", self.handle_i_shut_up)
         self.dispatcher.register("/init", self.handle_init)
         self.dispatcher.register("/stop", self.handle_stop)
-        # self.dispatcher.register("/formation", self.handle_formation)
+        self.dispatcher.register("/formation", self.handle_formation)
 
         self.dispatcher.register("/test_forward", self.handle_test_forward)
         self.dispatcher.register("/test_backward", self.handle_test_backward)
