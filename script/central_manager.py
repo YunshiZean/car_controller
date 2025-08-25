@@ -5,9 +5,9 @@
 文件名: central_manager.py
 简介： 中央管理器 
 作者： 未定义实验室.Zean 罗灵轩
-版本： 2.1.11
+版本： 2.1.12
 说明： 中央管理器
-更新内容： 将publish_goal映射到了/master_cmd
+更新内容： 新增四个测试功能
 创建时间： 2025.8.5
 最后更新时间： 2025.8.24
 """
@@ -216,7 +216,12 @@ class PatrolController:
         self.dispatcher.register("/!shut_up", self.handle_i_shut_up)
         self.dispatcher.register("/init", self.handle_init)
         self.dispatcher.register("/stop", self.handle_stop)
-        self.dispatcher.register("/formation", self.handle_stop)
+        self.dispatcher.register("/formation", self.handle_formation)
+
+        self.dispatcher.register("/test_forward", self.handle_test_forward)
+        self.dispatcher.register("/test_backward", self.handle_test_backward)
+        self.dispatcher.register("/test_left", self.handle_test_left)
+        self.dispatcher.register("/test_right", self.handle_test_right)
         # self.dispatcher.register("/switch", self.handle_switch)
         # self.dispatcher.register("/info",self.handle_info)
         # self.dispatcher.register("/go_power",self.handle_go_power)
@@ -235,6 +240,25 @@ class PatrolController:
                         print_info(response)
                 else:
                     print_warn("执行任务中，不接受其他命令")
+
+    def handle_formation(self, cmd=None):
+        self.mqtt_forma = 1
+        self.mqtt_setleader = 1
+        self.handle_carry("/carry 2")
+    def handle_exit_formation(self, cmd=None):
+        self.mqtt_forma = 0
+        self.mqtt_setleader = 0
+
+    def handle_test_forward(self, cmd=None):
+        self. nav_pub.publish(String("/test_forward"))
+    def handle_test_backward(self, cmd=None):
+        self. nav_pub.publish(String("/test_backward"))
+    def handle_test_left(self, cmd=None):
+        self. nav_pub.publish(String("/test_left"))
+    def handle_test_right(self, cmd=None):
+        self. nav_pub.publish(String("/test_right"))
+
+
 
     def handle_shut_up(self, cmd=None):
         self.exchange.trans("/shut_up".encode("utf-8"))
