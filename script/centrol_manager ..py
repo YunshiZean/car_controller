@@ -1,17 +1,6 @@
 #!/usr/bin/env python3
 #coding=utf-8
 
-"""
-文件名: central_manager.py
-简介： 中央管理器 
-作者： 未定义实验室.Zean 罗灵轩
-版本： 2.1.13
-说明： 中央管理器
-更新内容： 新增四个测试功能
-创建时间： 2025.8.5
-最后更新时间： 2025.8.24
-"""
-
 from enum import Enum, auto
 import time
 import rospy

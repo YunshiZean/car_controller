@@ -5,11 +5,11 @@
 文件名: central_manager.py
 简介： 中央管理器 
 作者： 未定义实验室.Zean 罗灵轩
-版本： 2.1.13
+版本： 3.0.0
 说明： 中央管理器
-更新内容： 新增四个测试功能
+更新内容： 第三个稳定版本
 创建时间： 2025.8.5
-最后更新时间： 2025.8.24
+最后更新时间： 2025.8.25
 """
 
 from enum import Enum, auto
@@ -203,7 +203,7 @@ class PatrolController:
         self.goal_pub = rospy.Publisher('/nav_goal', PointStamped, queue_size=10)
         self.master_cmd_pub = rospy.Publisher('/master_cmd', MasterCmd, queue_size=10)
         rospy.Subscriber('/result', String, self.result_callback)
-        rospy.Subscriber('/power_level', String, self.power_level_callback)
+        # rospy.Subscriber('/power_level', String, self.power_level_callback)
     # 命令调度器CD
         self.dispatcher = CommandDispatcher()
         self.dispatcher.register("/pause", self.handle_pause)
@@ -218,10 +218,11 @@ class PatrolController:
         self.dispatcher.register("/stop", self.handle_stop)
         # self.dispatcher.register("/formation", self.handle_formation)
 
-        self.dispatcher.register("/test_forward", self.handle_test_forward)
-        self.dispatcher.register("/test_backward", self.handle_test_backward)
-        self.dispatcher.register("/test_left", self.handle_test_left)
-        self.dispatcher.register("/test_right", self.handle_test_right)
+        # self.dispatcher.register("/test_forward", self.handle_test_forward)
+        # self.dispatcher.register("/test_backward", self.handle_test_backward)
+        # self.dispatcher.register("/test_left", self.handle_test_left)
+        # self.dispatcher.register("/test_right", self.handle_test_right)
+
         # self.dispatcher.register("/switch", self.handle_switch)
         # self.dispatcher.register("/info",self.handle_info)
         # self.dispatcher.register("/go_power",self.handle_go_power)
@@ -242,12 +243,9 @@ class PatrolController:
                     print_warn("执行任务中，不接受其他命令")
 
     def handle_formation(self, cmd=None):
-        self.mqtt_forma = 1
-        self.mqtt_setleader = 1
-        self.handle_carry("/carry 2")
+        pass
     def handle_exit_formation(self, cmd=None):
-        self.mqtt_forma = 0
-        self.mqtt_setleader = 0
+        pass
 
     def handle_test_forward(self, cmd=None):
         self. nav_pub.publish(String("/test_forward"))
